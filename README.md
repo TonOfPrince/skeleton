@@ -1,5 +1,3 @@
-[![CircleCI](https://circleci.com/gh/amfleming/skeleton.svg?style=svg)](https://circleci.com/gh/amfleming/skeleton)
-
 
 skeleton
 ============
