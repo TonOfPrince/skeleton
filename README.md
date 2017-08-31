@@ -1,3 +1,4 @@
+[![CircleCI](https://circleci.com/gh/TonOfPrince/skeleton.svg?style=svg)](https://circleci.com/gh/TonOfPrince/skeleton)
 
 skeleton
 ============
