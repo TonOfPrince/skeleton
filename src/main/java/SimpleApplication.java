@@ -33,6 +33,7 @@ public class SimpleApplication extends Application<Configuration> {
     @Override
     public void run(Configuration cfg, Environment env) {
         // Create any global resources you need here
+        enableSessionSupport(env);
         org.jooq.Configuration jooqConfig = setupJooq();
         ReceiptDao receiptDao = new ReceiptDao(jooqConfig);
 
