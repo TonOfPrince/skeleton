@@ -1,6 +1,5 @@
 package controllers;
 
-import api.CreateReceiptTagRequest;
 import api.ReceiptResponse;
 import dao.ReceiptTagDao;
 import generated.tables.records.ReceiptsRecord;
@@ -23,15 +22,14 @@ public class ReceiptTagController {
         this.receiptTags = receiptTags;
     }
 
-    @POST
-    public void toggleTag(@PathParam("tag") String tagName, @NotNull CreateReceiptTagRequest receiptTag) {
-        receiptTags.toggle(tagName, receiptTag.receipt_id);
+    @PUT
+    public void toggleTag(@PathParam("tag") String tagName, Integer receiptTag) {
+        receiptTags.toggle(tagName, receiptTag);
     }
 
     @GET
     public List<ReceiptResponse> getReceipts(@PathParam("tag") String tagName) {
         List<ReceiptsRecord> receiptRecords = receiptTags.getAllReceiptsByTags(tagName);
-        System.out.println(receiptRecords);
         return receiptRecords.stream().map(ReceiptResponse::new).collect(toList());
     }
 }

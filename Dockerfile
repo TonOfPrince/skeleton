@@ -8,6 +8,11 @@ FROM openjdk:8
 # Add our application logic and ALL our dependencies into the docker image
 ADD  build/distributions/skeleton.tar  /
 
+# The .tar file that gradle builds includes everything in src/main, but we also need
+# our appconfig.yml (which is not part of the .tar that gradle builds) so we must
+# add it explicitly
+ADD appconfig.yml /skeleton/
+
 # Convenience if we ever want to log into the image and snoop around
 WORKDIR /skeleton
 
@@ -15,4 +20,4 @@ WORKDIR /skeleton
 EXPOSE 8080
 
 # When a new container is created, the server program should be run.
-ENTRYPOINT ["/skeleton/bin/skeleton"]
+ENTRYPOINT ["/skeleton/bin/skeleton", "server", "appconfig.yml"]

@@ -14,6 +14,7 @@ import java.util.List;
 import javax.annotation.Generated;
 
 import org.jooq.Field;
+import org.jooq.ForeignKey;
 import org.jooq.Identity;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -34,7 +35,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ReceiptTags extends TableImpl<ReceiptTagsRecord> {
 
-	private static final long serialVersionUID = -1613220557;
+	private static final long serialVersionUID = -1399850756;
 
 	/**
 	 * The reference instance of <code>public.receipt_tags</code>
@@ -108,6 +109,14 @@ public class ReceiptTags extends TableImpl<ReceiptTagsRecord> {
 	@Override
 	public List<UniqueKey<ReceiptTagsRecord>> getKeys() {
 		return Arrays.<UniqueKey<ReceiptTagsRecord>>asList(Keys.CONSTRAINT_3);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public List<ForeignKey<ReceiptTagsRecord, ?>> getReferences() {
+		return Arrays.<ForeignKey<ReceiptTagsRecord, ?>>asList(Keys.CONSTRAINT_3A);
 	}
 
 	/**

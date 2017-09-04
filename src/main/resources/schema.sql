@@ -13,5 +13,6 @@ CREATE TABLE receipt_tags (
   receipt_id INT UNSIGNED,
   tag VARCHAR(255),
 
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  FOREIGN KEY (receipt_id) REFERENCES receipts(id)
 );

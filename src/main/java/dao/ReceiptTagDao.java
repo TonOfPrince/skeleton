@@ -46,7 +46,7 @@ public class ReceiptTagDao {
     }
 
     public List<ReceiptsRecord> getAllReceiptsByTags(String tagName) {
-        List<ReceiptsRecord> receiptTags = dsl.select().from(RECEIPTS).join(RECEIPT_TAGS).on(RECEIPT_TAGS.TAG.eq(tagName)).fetchInto(RECEIPTS);
+        List<ReceiptsRecord> receiptTags = dsl.select().from(RECEIPTS).join(RECEIPT_TAGS).on(RECEIPT_TAGS.RECEIPT_ID.eq(RECEIPTS.ID).and(RECEIPT_TAGS.TAG.eq(tagName))).fetchInto(ReceiptsRecord.class);
         return receiptTags;
 
     }
