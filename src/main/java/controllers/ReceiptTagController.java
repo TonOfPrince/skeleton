@@ -4,8 +4,6 @@ import api.ReceiptResponse;
 import dao.ReceiptTagDao;
 import generated.tables.records.ReceiptsRecord;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;

@@ -6,7 +6,6 @@ import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 
-import java.util.Map;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -48,6 +47,5 @@ public class ReceiptTagDao {
     public List<ReceiptsRecord> getAllReceiptsByTags(String tagName) {
         List<ReceiptsRecord> receiptTags = dsl.select().from(RECEIPTS).join(RECEIPT_TAGS).on(RECEIPT_TAGS.RECEIPT_ID.eq(RECEIPTS.ID).and(RECEIPT_TAGS.TAG.eq(tagName))).fetchInto(ReceiptsRecord.class);
         return receiptTags;
-
     }
 }
