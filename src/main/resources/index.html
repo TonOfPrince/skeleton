@@ -2,53 +2,223 @@
 <html>
 
 <head>
-    <link rel="stylesheet" href="style.css" />
     <script data-require="jquery@*" data-semver="3.1.1" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <style>
-        #container {border: 1px solid brown;}
-        H1 {float: left;}
+        .container {
+            width:40rem;
+        }
+        .title {
+            display: flex;
+            justify-content: space-between;
+            height: 3rem;
+        }
+        .titleText {
+            font-size: 2em;
+            margin-left: .5rem;
+        }
+        .header {
+            display: flex;
+        }
         .button{
-            background-color:#55A;
-            border: 1px solid #229;
-            width: 100px;
-            float: right;
+            background-color:orange;
+            border: 1px solid black;
+            width: 10rem;
             font-size: 2em;
             color: white;
             text-align: center;
+            border-radius: 8px;
+            position: relative;
+            z-index: 0;
+            cursor: pointer;
+            margin-right: .5rem;
+        }
+        .form {
+            background-color: orange;
+            position: relative;
+            margin-top: -5px;
+            z-index: 1;
+            border: 1px solid black;
+        }
+        #merchant, #amount {
+            color: white;
+            background-color: transparent;
+            border: 1px solid black;
+            margin-top: 1rem;
+            height: 2rem;
+            margin-left: 1rem;
+            font-size: 2rem;
+            padding-left: .5rem;
+        }
+        input::-webkit-input-placeholder { /* Chrome */
+            color: white;
+            font-style: italic;
+        }
+        input:-ms-input-placeholder { /* IE 10+ */
+            color: white;
+            font-style: italic;
+        }
+        input::-moz-placeholder { /* Firefox 19+ */
+            color: white;
+            opacity: 1;
+            font-style: italic;
+        }
+        input:-moz-placeholder { /* Firefox 4 - 18 */
+            color: white;
+            opacity: 1;
+            font-style: italic;
+        }
+        .buttonRow {
+            display: flex;
+            justify-content: flex-end;
+            padding-bottom: 0.5rem;
+            margin-top: 1rem;
+        }
+        .cancelButton {
+            font-size: 2em;
+            color: white;
+            background: red;
+            padding: .5rem;
+            border-radius: 5px;
+            margin-right: 0.5rem;
+            border: 1px solid black;
+            cursor: pointer;
+        }
+        .saveButton {
+            font-size: 2em;
+            color: white;
+            background: green;
+            padding: .5rem;
+            border-radius: 5px;
+            margin-right: 0.5rem;
+            border: 1px solid black;
+            cursor: pointer;
         }
         #receiptList {
-            border: 1px solid green;
-            clear: both;
+            border: 1px solid black;
+            background-color: lightblue;
+            border-bottom:none;
+            margin-top: 1rem;
+        }
+        .timeCell {
+            border-right: 1px solid black;
+            border-bottom: 1px solid black;
+            width: 10rem;
+            text-align: center;
+        }
+        .merchantCell {
+            border-right: 1px solid black;
+            border-bottom: 1px solid black;
+            width: 10rem;
+            text-align: center;
+        }
+        .costCell {
+            border-right: 1px solid black;
+            border-bottom: 1px solid black;
+            width: 10rem;
+            text-align: center;
+        }
+        .tagsCell {
+            width: 10rem;
+            text-align: center;
+            border-bottom: 1px solid black;
         }
         .receipt {
-            background-color: #eee;
-            margin-bottom: 5px;
+            display: flex;
+        }
+        .hide {
+            display: none;
         }
     </style>
     <script>
         // This is the idiomatic way to ensure that JQuery does not
         // execute until the page has loaded
         $(function(){
-            const api = ""; // <- do not need a root api URL if this page is served directly by the API
-            $.getJSON(api+"/receipts", function(receipts){
+            const api = "http://0.0.0.0:8080"; // <- do not need a root api URL if this page is served directly by the API
+            var displayReceipts = function (receipts) {
+                $('.receipt').remove();
                 for(var i=0; i < receipts.length; i++) {
                     var receipt = receipts[i];
                     var merchantName = receipt.merchantName;
-                    $('<div class="receipt"' + merchantName + '<div><span class="receiptTag">t1</span></div></div>')
+                    var created = receipt.created;
+                    var amount = receipt.value || '';
+                    $('<div class="receipt">' +
+                        '<div class = "timeCell">'+ created + '</div>' +
+                        '<div class = "merchantCell">' + merchantName + '</div>' +
+                        '<div class = "costCell">' + amount + '</div>' +
+                        '<div class = "tagsCell"></div>' +
+                        '</div>')
                         .appendTo($("#receiptList"));
                 }
-            })
+            };
+            var getReceipts = function() {
+                $.getJSON(api+"/receipts", function(receipts){
+                    displayReceipts(receipts);
+                    console.log(receipts);
+
+                });
+            };
+
+            $("#add-receipt").click(function() {
+                $(".form").removeClass("hide");
+            });
+            $("#cancel-receipt").click(function() {
+                $(".form").addClass("hide");
+            });
+            $("#save-receipt").click(function() {
+                var data = {
+                    merchant: $('#merchant')[0].value,
+                    amount: +$('#amount')[0].value,
+                };
+                fetch(api + '/receipts', {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                }).then(function(response) {
+                    return response.json();
+                }).catch(function(err) {
+                    console.log(err)
+                }).then(function(data) {
+                    console.log(data);
+                    $('#merchant').val('');
+                    $('#amount').val('');
+                    getReceipts();
+                });
+                $(".form").addClass("hide");
+            });
         })
     </script>
 </head>
 
 <body>
-<DIV id="container">
-    <h1>My receipts</h1>
-    <div class="button">+</div>
-    <div id="receiptList">
+<div class = "container">
+    <div class = "title">
+        <div class = "titleText">My receipts</div>
+        <div id = "add-receipt" class = "button">+</div>
     </div>
-</DIV>
+    <div class = "form hide">
+        <div>
+            <input id = "merchant" placeholder = "merchant" />
+        </div>
+        <div>
+            <input id = "amount" placeholder = "amount" />
+        </div>
+        <div class = "buttonRow">
+            <div id = "cancel-receipt" class = "cancelButton">cancel</div>
+            <div id = "save-receipt" class = "saveButton">save</div>
+        </div>
+    </div>
+    <div id = "receiptList">
+        <div class = "header">
+            <div class = "timeCell">Time</div>
+            <div class = "merchantCell">Merchant</div>
+            <div class = "costCell">$</div>
+            <div class = "tagsCell">Tags</div>
+        </div>
+    </div>
+</div>
+
 </body>
 
 </html>
