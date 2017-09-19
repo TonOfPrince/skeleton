@@ -3,6 +3,7 @@
 
 <head>
     <script data-require="jquery@*" data-semver="3.1.1" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"><</script>
     <style>
         .container {
             width:40rem;
@@ -103,24 +104,42 @@
             border-right: 1px solid black;
             border-bottom: 1px solid black;
             width: 10rem;
-            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         .merchantCell {
             border-right: 1px solid black;
             border-bottom: 1px solid black;
             width: 10rem;
-            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         .costCell {
             border-right: 1px solid black;
             border-bottom: 1px solid black;
             width: 10rem;
-            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         .tagsCell {
             width: 10rem;
-            text-align: center;
             border-bottom: 1px solid black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .tagValue {
+            width: 5rem;
+            background-color: beige;
+            color: black;
+            border-radius: 8px;
+            margin: 5px auto;
+            cursor: pointer;
+            text-align: center;
         }
         .receipt {
             display: flex;
@@ -128,12 +147,22 @@
         .hide {
             display: none;
         }
+        .add-tag {
+            width: 5rem;
+            background-color: blue;
+            color: white;
+            border-radius: 8px;
+            margin: 5px auto;
+            cursor: pointer;
+            text-align: center;
+        }
     </style>
     <script>
         // This is the idiomatic way to ensure that JQuery does not
         // execute until the page has loaded
         $(function(){
             const api = "http://0.0.0.0:8080"; // <- do not need a root api URL if this page is served directly by the API
+            var store = [];
             var displayReceipts = function (receipts) {
                 $('.receipt').remove();
                 for(var i=0; i < receipts.length; i++) {
@@ -141,6 +170,7 @@
                     var merchantName = receipt.merchantName;
                     var created = receipt.created;
                     var amount = receipt.value || '';
+                    var tags = getTags(receipt, i);
                     $('<div class="receipt">' +
                         '<div class = "timeCell">'+ created + '</div>' +
                         '<div class = "merchantCell">' + merchantName + '</div>' +
@@ -150,11 +180,71 @@
                         .appendTo($("#receiptList"));
                 }
             };
+            var displayReceipt = function (receipt) {
+                var merchantName = receipt.merchantName;
+                var created = receipt.created;
+                var amount = receipt.value || '';
+                var id = receipt.id;
+                var receiptHTML =  $('<div class="receipt" id = ' + id +'>' +
+                    '<div class = "timeCell">'+ created + '</div>' +
+                    '<div class = "merchantCell merchant">' + merchantName + '</div>' +
+                    '<div class = "costCell amount">' + amount + '</div>' +
+                    '<div class = "tagsCell tags"><div class = "add-tag">+ Add</div></div>' +
+                    '</div>');
+                receiptHTML.appendTo($("#receiptList"));
+                receiptHTML.find('.add-tag').click(function() {
+                    console.log('here');
+                    var tagInput = $('<input class = "tag_input" id =' + id +  '/>');
+                    tagInput.keypress(function(e) {
+                        if (e.which === 13) {
+                            var newTag = tagInput[0].value;
+                            fetch('/tags/' + newTag, {
+                                method: 'PUT',
+                                body: JSON.stringify(id),
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                            }).then(function(response) {
+                                var newTagHTML = $('<div class = "tagValue" id =' + newTag  + id + '>' + newTag  + '</div>');
+                                newTagHTML.appendTo(receiptHTML.find('.tagsCell'));
+                                tagInput.remove();
+                                newTagHTML.click(function() {
+                                    fetch('/tags/' + newTag, {
+                                        method: 'PUT',
+                                        body: JSON.stringify(id),
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                    }).then(function(response) {
+                                        newTagHTML.remove();
+                                    }).catch(function(err) {
+                                        console.log(err)
+                                    });
+                                });
+                            }).catch(function(err) {
+                                console.log(err)
+                            });
+                        }
+                    });
+                    tagInput.appendTo($('.receipt#' + id));
+                });
+            };
             var getReceipts = function() {
-                $.getJSON(api+"/receipts", function(receipts){
+                $.getJSON("/receipts", function(receipts){
                     displayReceipts(receipts);
                     console.log(receipts);
 
+                });
+            };
+            var getReceipt = function(id) {
+                $.getJSON("/receipts", function(receipts){
+                    console.log(receipts)
+                    var receipt =_.find(receipts, function (receipt) {
+                        return receipt.id === id;
+                    });
+                    console.log(id);
+                    console.log(receipt)
+                    displayReceipt(receipt);
                 });
             };
 
@@ -165,27 +255,31 @@
                 $(".form").addClass("hide");
             });
             $("#save-receipt").click(function() {
-                var data = {
-                    merchant: $('#merchant')[0].value,
-                    amount: +$('#amount')[0].value,
-                };
-                fetch(api + '/receipts', {
-                    method: 'POST',
-                    body: JSON.stringify(data),
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                }).then(function(response) {
-                    return response.json();
-                }).catch(function(err) {
-                    console.log(err)
-                }).then(function(data) {
-                    console.log(data);
-                    $('#merchant').val('');
-                    $('#amount').val('');
-                    getReceipts();
-                });
-                $(".form").addClass("hide");
+                var merchant = $('#merchant')[0].value;
+                if (merchant) {
+                    var amount = +$('#amount')[0].value;
+                    var data = {
+                        merchant: merchant,
+                        amount: amount,
+                    };
+                    fetch('/receipts', {
+                        method: 'POST',
+                        body: JSON.stringify(data),
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    }).then(function(response) {
+                        return response.json();
+                    }).catch(function(err) {
+                        console.log(err)
+                    }).then(function(data) {
+                        console.log(data);
+                        $('#merchant').val('');
+                        $('#amount').val('');
+                        getReceipt(data);
+                    });
+                    $(".form").addClass("hide");
+                }
             });
         })
     </script>
