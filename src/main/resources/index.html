@@ -33,7 +33,7 @@
             cursor: pointer;
             margin-right: .5rem;
         }
-        .form {
+        .form, .camera-form {
             background-color: orange;
             position: relative;
             margin-top: -5px;
@@ -156,12 +156,82 @@
             cursor: pointer;
             text-align: center;
         }
+        video {
+            height: 450px;
+            border: 1px solid black;
+        }
+        #vidwrap {
+            margin: 20px;
+        }
     </style>
     <script>
         // This is the idiomatic way to ensure that JQuery does not
         // execute until the page has loaded
         $(function(){
+            var imageCapture;
+            var track;
+            function attachMediaStream(mediaStream) {
+                $('video')[0].srcObject = mediaStream;
+
+                // Saving the track allows us to capture a photo
+                track = mediaStream.getVideoTracks()[0];
+                imageCapture = new ImageCapture(track);
+            }
+            function startVideo() {
+                navigator.mediaDevices.getUserMedia({video: {facingMode: {exact: "environment"}}})
+                    .then(attachMediaStream)
+                    .catch(function(error) {
+                        navigator.mediaDevices.getUserMedia({video: true})
+                    .then(attachMediaStream)
+                    .catch(function(error) {
+                        console.log('you are fooked');
+                    })
+                })
+            }
+            function takeSnapshot() {
+                // create a CANVAS element that is same size as the image
+                imageCapture.grabFrame()
+                    .then(function (img) {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        canvas.getContext('2d').drawImage(img, 0, 0);
+                        const base64EncodedImageData = canvas.toDataURL('image/png').split(',')[1];
+                        fetch('/images', {
+                            method: 'POST',
+                            body: base64EncodedImageData,
+                            headers: {
+                                'Content-Type': 'text/plain',
+                            },
+                        }).then(function(response) {
+                            return response.json();
+                        }).catch(function(err) {
+                            console.log(err)
+                        }).then(function(data) {
+                            $(".camera-form").addClass("hide");
+                            $(".form").removeClass("hide");
+                            $('#merchant').val(data.merchantName);
+                            $('#amount').val(data.amount);
+                            // Elements for taking the snapshot
+                            var canvas = document.getElementById('canvas');
+                            var context = canvas.getContext('2d');
+                            var video = document.getElementById('video');
+
+                            // Trigger photo take
+                            document.getElementById("snap").addEventListener("click", function() {
+                                context.drawImage(video, data.x1, data.y1, data.x2, data.y2);
+                            });
+                        });
+                    })
+            }
+
+            $('#start-camera').on('click', startVideo);
+//            $('video').on('play', function() { $('#take-pic').prop('disabled', false)});
+            $('#take-pic').on('click', takeSnapshot);
+
+
             var store = [];
+
             var displayReceipts = function (receipts) {
                 $('.receipt').remove();
                 for(var i=0; i < receipts.length; i++) {
@@ -237,16 +307,48 @@
             };
             var getReceipt = function(id) {
                 $.getJSON("/receipts", function(receipts){
-                    console.log(receipts)
+                    console.log(receipts);
                     var receipt =_.find(receipts, function (receipt) {
                         return receipt.id === id;
                     });
                     console.log(id);
-                    console.log(receipt)
+                    console.log(receipt);
                     displayReceipt(receipt);
                 });
             };
-
+            $("#start-camera").click(function() {
+                $(".camera-form").removeClass("hide");
+            });
+            $("#take-pic-cancel").click(function() {
+                $(".camera-form").addClass("hide");
+            });
+            $("#save-receipt").click(function() {
+                var merchant = $('#merchant')[0].value;
+                if (merchant) {
+                    var amount = +$('#amount')[0].value;
+                    var data = {
+                        merchant: merchant,
+                        amount: amount,
+                    };
+                    fetch('/receipts', {
+                        method: 'POST',
+                        body: JSON.stringify(data),
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    }).then(function(response) {
+                        return response.json();
+                    }).catch(function(err) {
+                        console.log(err)
+                    }).then(function(data) {
+                        console.log(data);
+                        $('#merchant').val('');
+                        $('#amount').val('');
+                        getReceipt(data);
+                    });
+                    $(".form").addClass("hide");
+                }
+            });
             $("#add-receipt").click(function() {
                 $(".form").removeClass("hide");
             });
@@ -254,6 +356,19 @@
                 $(".form").addClass("hide");
             });
             $("#save-receipt").click(function() {
+                // Elements for taking the snapshot
+                var canvas = document.getElementById('canvas');
+                var context = canvas.getContext('2d');
+                var video = document.getElementById('video');
+
+                // Trigger photo take
+                document.getElementById("snap").addEventListener("click", function() {
+                    context.drawImage(video, 0, 0, 640, 480);
+                });
+                fetch('/images', {
+                    method: 'POST',
+                    body: JSON
+                })
                 var merchant = $('#merchant')[0].value;
                 if (merchant) {
                     var amount = +$('#amount')[0].value;
@@ -289,8 +404,10 @@
     <div class = "title">
         <div class = "titleText">My receipts</div>
         <div id = "add-receipt" class = "button">+</div>
+        <div id = "start-camera" class = "button">+</div>
     </div>
     <div class = "form hide">
+        <canvas id="canvas"></canvas>
         <div>
             <input id = "merchant" placeholder = "merchant" />
         </div>
@@ -300,6 +417,15 @@
         <div class = "buttonRow">
             <div id = "cancel-receipt" class = "cancelButton">cancel</div>
             <div id = "save-receipt" class = "saveButton">save</div>
+        </div>
+    </div>
+    <div class = "camera-form hide">
+        <div id="vidwrap">
+            <video autoplay></video>
+        </div>
+        <div class = "buttonRow">
+            <div id = "take-pic-cancel" class = "cancelButton">cancel</div>
+            <div id = "take-pic" class = "saveButton">snap</div>
         </div>
     </div>
     <div id = "receiptList">
